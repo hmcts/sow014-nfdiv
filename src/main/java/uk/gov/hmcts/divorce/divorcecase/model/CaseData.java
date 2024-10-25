@@ -248,6 +248,14 @@ public class CaseData {
         access = {CaseworkerAndSuperUserAccess.class}
     )
     private String note;
+    @CCD(
+        label = "Add random stuff",
+        hint = "Enter random gibberish",
+        typeOverride = TextArea,
+        access = {CaseworkerAndSuperUserAccess.class}
+    )
+
+    private String anotherField;
 
     @CCD(
         label = "Bulk list case reference",
