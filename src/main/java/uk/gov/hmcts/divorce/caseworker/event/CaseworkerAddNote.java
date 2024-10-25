@@ -54,7 +54,6 @@ public class CaseworkerAddNote implements CCDConfig<CaseData, State, UserRole> {
             .forStates(POST_SUBMISSION_STATES_WITH_WITHDRAWN_AND_REJECTED)
             .name("Add note")
             .description("Add note")
-            .aboutToStartCallback(this::start)
             .aboutToSubmitCallback(this::aboutToSubmit)
             .showEventNotes()
             .grant(CREATE_READ_UPDATE,
@@ -62,21 +61,9 @@ public class CaseworkerAddNote implements CCDConfig<CaseData, State, UserRole> {
             .grant(CREATE_READ_UPDATE_DELETE,
                 SUPER_USER)
             .grantHistoryOnly(LEGAL_ADVISOR, JUDGE))
-            .page("addCaseNotes", this::foo)
+            .page("addCaseNotes")
             .pageLabel("Add case notes")
-            .optional(CaseData::getNote)
-            .page("another", this::foo)
-            .pageLabel("pageLabel")
-            .optional(CaseData::getAnotherField);
-    }
-
-    private AboutToStartOrSubmitResponse<CaseData, State> start(CaseDetails<CaseData, State> caseDataStateCaseDetails) {
-        caseDataStateCaseDetails.getData().setAnotherField("prepop");
-        return AboutToStartOrSubmitResponse.<CaseData, State>builder().data(caseDataStateCaseDetails.getData()).build();
-    }
-
-    private AboutToStartOrSubmitResponse<CaseData, State> foo(CaseDetails<CaseData, State> caseDataStateCaseDetails, CaseDetails<CaseData, State> caseDataStateCaseDetails1) {
-        return AboutToStartOrSubmitResponse.<CaseData, State>builder().data(caseDataStateCaseDetails1.getData()).build();
+            .optional(CaseData::getNote);
     }
 
     public AboutToStartOrSubmitResponse<CaseData, State> aboutToSubmit(
