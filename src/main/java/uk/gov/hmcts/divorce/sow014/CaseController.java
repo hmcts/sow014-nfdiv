@@ -20,11 +20,16 @@ public class CaseController {
     @Autowired
     private ObjectMapper mapper;
 
-    @GetMapping({"/cases/{caseRef}"})
+    @GetMapping(
+        value = "/cases/{caseRef}",
+        produces = "application/json"
+    )
     public String getCase(@PathVariable("caseRef") long caseRef) {
         return db.queryForObject(
             """
-                select r - 'data' || jsonb_build_object('case_data', r->'data')
+                select
+                (r - 'data') - 'marked_by_logstash'
+                || jsonb_build_object('case_data', r->'data')
                 from (
                 select to_jsonb(c) r from case_data c where reference = ?
                 ) s""",
