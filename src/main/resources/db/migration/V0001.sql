@@ -15,6 +15,8 @@ CREATE TABLE public.case_data (
                                 id bigserial primary key,
                                 created_date timestamp without time zone DEFAULT now() NOT NULL,
                                 last_modified timestamp without time zone,
+                                jurisdiction character varying(255) NOT NULL,
+                                case_type_id character varying(255) NOT NULL,
                                 state character varying(255) NOT NULL,
                                 data jsonb NOT NULL,
                                 data_classification jsonb,
