@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
 import uk.gov.hmcts.ccd.sdk.api.callback.AboutToStartOrSubmitResponse;
-import uk.gov.hmcts.reform.ccd.client.model.CallbackRequest;
 
 import java.util.Map;
 
@@ -28,7 +27,7 @@ public class CaseController {
         return db.queryForObject(
             """
                 select
-                (r - 'data') - 'marked_by_logstash'
+                (((r - 'data') - 'marked_by_logstash') - 'reference') - 'resolved_ttl'
                 || jsonb_build_object('case_data', r->'data')
                 from (
                 select to_jsonb(c) r from case_data c where reference = ?
