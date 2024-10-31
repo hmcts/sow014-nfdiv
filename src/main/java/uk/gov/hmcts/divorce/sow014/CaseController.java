@@ -42,23 +42,11 @@ public class CaseController {
     @PostMapping("/cases")
     public String aboutToSubmit(@RequestBody Map<String, Object> details) {
         log.info("case Details: {}", details);
-//        @SuppressWarnings("unchecked")
-//        var details = (Map<String, Object>) request.get("case_details");
-        // persist the request.caseDetails to case_data table
-        Long id = db.query("SELECT nextval('public.case_data_id_seq')",
-                rs -> {
-                    if (rs.next()) {
-                        return rs.getLong(1);
-                    } else {
-                        throw new SQLException("Unable to retrieve value from sequence chessgame_seq.");
-                    }
-                });
         db.update(
             """
-                insert into case_data (id, jurisdiction, case_type_id, state, data, data_classification, reference, security_classification, version)
-                values (?,  ?, ?, ?, ?::jsonb, ?::jsonb, ?, ?::securityclassification, ?)
+                insert into case_data (jurisdiction, case_type_id, state, data, data_classification, reference, security_classification, version)
+                values (?, ?, ?, ?::jsonb, ?::jsonb, ?, ?::securityclassification, ?)
                 """,
-                id,
             details.get("jurisdiction"),
             details.get("case_type_id"),
             details.get("state"),
