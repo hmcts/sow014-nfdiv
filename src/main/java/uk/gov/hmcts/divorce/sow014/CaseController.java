@@ -1,7 +1,9 @@
 package uk.gov.hmcts.divorce.sow014;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.sql.SQLException;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.bind.annotation.*;
@@ -9,6 +11,7 @@ import uk.gov.hmcts.ccd.sdk.api.callback.AboutToStartOrSubmitResponse;
 
 import java.util.Map;
 
+@Slf4j
 @RestController
 @RequestMapping( path = "/ccd" )
 public class CaseController {
@@ -37,15 +40,27 @@ public class CaseController {
 
     @SneakyThrows
     @PostMapping("/cases")
-    public AboutToStartOrSubmitResponse aboutToSubmit(@RequestBody Map<String, Object> request) {
-        @SuppressWarnings("unchecked")
-        var details = (Map<String, Object>) request.get("case_details");
+    public String aboutToSubmit(@RequestBody Map<String, Object> details) {
+        log.info("case Details: {}", details);
+//        @SuppressWarnings("unchecked")
+//        var details = (Map<String, Object>) request.get("case_details");
         // persist the request.caseDetails to case_data table
+        Long id = db.query("SELECT nextval('public.case_data_id_seq')",
+                rs -> {
+                    if (rs.next()) {
+                        return rs.getLong(1);
+                    } else {
+                        throw new SQLException("Unable to retrieve value from sequence chessgame_seq.");
+                    }
+                });
         db.update(
             """
-                insert into case_data (state, data, data_classification, reference, security_classification, version)
-                values (?, ?::jsonb, ?::jsonb, ?, ?::securityclassification, ?)
+                insert into case_data (id, jurisdiction, case_type_id, state, data, data_classification, reference, security_classification, version)
+                values (?,  ?, ?, ?, ?::jsonb, ?::jsonb, ?, ?::securityclassification, ?)
                 """,
+                id,
+            details.get("jurisdiction"),
+            details.get("case_type_id"),
             details.get("state"),
             mapper.writeValueAsString(details.get("case_data")),
             mapper.writeValueAsString(details.get("data_classification")),
@@ -53,6 +68,8 @@ public class CaseController {
             details.get("security_classification"),
             1
         );
-        return AboutToStartOrSubmitResponse.builder().build();
+        String response = getCase((long) details.get("id"));
+        log.info("case response: {}", response);
+        return response;
     }
 }
