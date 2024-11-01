@@ -13,7 +13,7 @@ import java.util.Map;
 
 @Slf4j
 @RestController
-@RequestMapping( path = "/ccd" )
+@RequestMapping(path = "/ccd")
 public class CaseController {
 
     @Autowired
@@ -23,25 +23,26 @@ public class CaseController {
     private ObjectMapper mapper;
 
     @GetMapping(
-        value = "/cases/{caseRef}",
-        produces = "application/json"
+            value = "/cases/{caseRef}",
+            produces = "application/json"
     )
     public String getCase(@PathVariable("caseRef") long caseRef) {
         return db.queryForObject(
-            """
-                select
-                (((r - 'data') - 'marked_by_logstash') - 'reference') - 'resolved_ttl'
-                || jsonb_build_object('case_data', r->'data')
-                from (
-                select to_jsonb(c) r from case_data c where reference = ?
-                ) s""",
-            new Object[]{ caseRef }, String.class);
+                """
+                        select
+                        (((r - 'data') - 'marked_by_logstash') - 'reference') - 'resolved_ttl'
+                        || jsonb_build_object('case_data', r->'data')
+                        from (
+                        select to_jsonb(c) r from case_data c where reference = ?
+                        ) s""",
+                new Object[]{caseRef}, String.class);
     }
 
     @SneakyThrows
     @PostMapping("/cases")
-    public String aboutToSubmit(@RequestBody Map<String, Object> details) {
-        log.info("case Details: {}", details);
+    public String aboutToSubmit(@RequestBody Map<String, Map<String, Object>> details) {
+        Map<String, Object> caseDetails = details.get("caseDetails");
+        log.info("case Details: {}", caseDetails);
 //        @SuppressWarnings("unchecked")
 //        var details = (Map<String, Object>) request.get("case_details");
         // persist the request.caseDetails to case_data table
@@ -54,21 +55,21 @@ public class CaseController {
                     }
                 });
         db.update(
-            """
-                insert into case_data (id, jurisdiction, case_type_id, state, data, data_classification, reference, security_classification, version)
-                values (?,  ?, ?, ?, ?::jsonb, ?::jsonb, ?, ?::securityclassification, ?)
-                """,
+                """
+                        insert into case_data (id, jurisdiction, case_type_id, state, data, data_classification, reference, security_classification, version)
+                        values (?,  ?, ?, ?, ?::jsonb, ?::jsonb, ?, ?::securityclassification, ?)
+                        """,
                 id,
-            details.get("jurisdiction"),
-            details.get("case_type_id"),
-            details.get("state"),
-            mapper.writeValueAsString(details.get("case_data")),
-            mapper.writeValueAsString(details.get("data_classification")),
-            details.get("id"),
-            details.get("security_classification"),
-            1
+                caseDetails.get("jurisdiction"),
+                caseDetails.get("case_type_id"),
+                caseDetails.get("state"),
+                mapper.writeValueAsString(caseDetails.get("case_data")),
+                mapper.writeValueAsString(caseDetails.get("data_classification")),
+                caseDetails.get("id"),
+                caseDetails.get("security_classification"),
+                1
         );
-        String response = getCase((long) details.get("id"));
+        String response = getCase((long) caseDetails.get("id"));
         log.info("case response: {}", response);
         return response;
     }
