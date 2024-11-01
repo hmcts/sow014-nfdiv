@@ -57,8 +57,47 @@ public class CaseController {
             event.getCaseDetails().get("security_classification"),
             1
         );
+        saveAuditRecord(event, 1);
         String response = getCase((long) event.getCaseDetails().get("id"));
         log.info("case response: {}", response);
         return response;
+    }
+
+    @SneakyThrows
+    private void saveAuditRecord(POCCaseDetails details, int version) {
+        var event = details.getEventDetails();
+        var data = details.getCaseDetails();
+        db.update(
+                """
+                    insert into case_event (
+                      data,
+                      data_classification,
+                      event_id,
+                      user_id,
+                      case_reference,
+                      case_type_id,
+                      case_type_version,
+                      state_id,
+                      user_first_name,
+                      user_last_name,
+                      event_name,
+                      state_name,
+                      security_classification)
+                    values (?::jsonb,?::jsonb,?,?,?,?,?,?,?,?,?,?,?::securityclassification)
+                    """,
+                mapper.writeValueAsString(data.get("case_data")),
+                mapper.writeValueAsString(data.get("data_classification")),
+                event.getEventId(),
+                "user-id",
+                data.get("id"),
+                "NFD",
+                version,
+                event.getStateName(),
+                "a-first-name",
+                "a-last-name",
+                event.getEventName(),
+                event.getStateName(),
+                data.get("security_classification")
+        );
     }
 }
