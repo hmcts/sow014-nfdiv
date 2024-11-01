@@ -13,7 +13,7 @@ import java.util.Map;
 
 @Slf4j
 @RestController
-@RequestMapping( path = "/ccd" )
+@RequestMapping(path = "/ccd")
 public class CaseController {
 
     @Autowired
@@ -23,19 +23,19 @@ public class CaseController {
     private ObjectMapper mapper;
 
     @GetMapping(
-        value = "/cases/{caseRef}",
-        produces = "application/json"
+            value = "/cases/{caseRef}",
+            produces = "application/json"
     )
     public String getCase(@PathVariable("caseRef") long caseRef) {
         return db.queryForObject(
-            """
-                select
-                (((r - 'data') - 'marked_by_logstash') - 'reference') - 'resolved_ttl'
-                || jsonb_build_object('case_data', r->'data')
-                from (
-                select to_jsonb(c) r from case_data c where reference = ?
-                ) s""",
-            new Object[]{ caseRef }, String.class);
+                """
+                        select
+                        (((r - 'data') - 'marked_by_logstash') - 'reference') - 'resolved_ttl'
+                        || jsonb_build_object('case_data', r->'data')
+                        from (
+                        select to_jsonb(c) r from case_data c where reference = ?
+                        ) s""",
+                new Object[]{caseRef}, String.class);
     }
 
     @SneakyThrows
