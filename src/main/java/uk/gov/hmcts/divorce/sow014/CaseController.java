@@ -40,23 +40,24 @@ public class CaseController {
 
     @SneakyThrows
     @PostMapping("/cases")
-    public String aboutToSubmit(@RequestBody Map<String, Object> details) {
-        log.info("case Details: {}", details);
+    public String createEvent(@RequestBody POCCaseDetails event) {
+        log.info("case Details: {}", event);
+        var details = event.getEventDetails();
         db.update(
             """
                 insert into case_data (jurisdiction, case_type_id, state, data, data_classification, reference, security_classification, version)
                 values (?, ?, ?, ?::jsonb, ?::jsonb, ?, ?::securityclassification, ?)
                 """,
-            details.get("jurisdiction"),
-            details.get("case_type_id"),
-            details.get("state"),
-            mapper.writeValueAsString(details.get("case_data")),
-            mapper.writeValueAsString(details.get("data_classification")),
-            details.get("id"),
-            details.get("security_classification"),
+            "DIVORCE",
+            "NFD",
+            details.getStateName(),
+            mapper.writeValueAsString(event.getCaseDetails().get("case_data")),
+            mapper.writeValueAsString(event.getCaseDetails().get("data_classification")),
+            event.getCaseDetails().get("id"),
+            event.getCaseDetails().get("security_classification"),
             1
         );
-        String response = getCase((long) details.get("id"));
+        String response = getCase((long) event.getCaseDetails().get("id"));
         log.info("case response: {}", response);
         return response;
     }
