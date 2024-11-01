@@ -32,8 +32,9 @@ public class CaseController {
                         select
                         (((r - 'data') - 'marked_by_logstash') - 'reference') - 'resolved_ttl'
                         || jsonb_build_object('case_data', r->'data')
+                        || jsonb_build_object('id', reference)
                         from (
-                        select to_jsonb(c) r from case_data c where reference = ?
+                        select reference, to_jsonb(c) r from case_data c where reference = ?
                         ) s""",
                 new Object[]{caseRef}, String.class);
     }
@@ -42,7 +43,6 @@ public class CaseController {
     @PostMapping("/cases")
     public String createEvent(@RequestBody POCCaseDetails event) {
         log.info("case Details: {}", event);
-        var details = event.getEventDetails();
         db.update(
             """
                 insert into case_data (jurisdiction, case_type_id, state, data, data_classification, reference, security_classification, version)
@@ -50,7 +50,7 @@ public class CaseController {
                 """,
             "DIVORCE",
             "NFD",
-            details.getStateName(),
+            event.getCaseDetails().get("state"),
             mapper.writeValueAsString(event.getCaseDetails().get("case_data")),
             mapper.writeValueAsString(event.getCaseDetails().get("data_classification")),
             event.getCaseDetails().get("id"),
@@ -61,6 +61,23 @@ public class CaseController {
         String response = getCase((long) event.getCaseDetails().get("id"));
         log.info("case response: {}", response);
         return response;
+    }
+
+    @GetMapping(
+            value = "/cases/{caseRef}/history",
+            produces = "application/json"
+    )
+    public String loadHistory(@PathVariable("caseRef") long caseRef) {
+        return db.queryForObject(
+                """
+                        select jsonb_agg(to_jsonb(e) - 'event_id' - 'case_reference'
+                        || jsonb_build_object('id', event_id)
+                       -- || jsonb_build_object('internal_id', id)
+                         order by id desc)
+                        from case_event e
+                        where case_reference = ?
+                        """,
+                new Object[]{caseRef}, String.class);
     }
 
     @SneakyThrows
@@ -92,7 +109,7 @@ public class CaseController {
                 data.get("id"),
                 "NFD",
                 version,
-                event.getStateName(),
+                data.get("state"),
                 "a-first-name",
                 "a-last-name",
                 event.getEventName(),
